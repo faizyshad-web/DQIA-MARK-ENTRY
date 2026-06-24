@@ -1,0 +1,11 @@
+﻿Teacher ID,Name,Email,Assigned Classes,Assigned Subjects
+teacher001,Sarah Ahmed,teacher1@school.com,Class 1|Class 2|Class 5,Arabic|Quran
+teacher002,John Doe,teacher2@school.com,Class 3|Class 4,English|Malayalam
+teacher003,David Miller,teacher3@school.com,Class 5|Class 6,Mathematics|Science
+teacher004,Emily Davis,teacher4@school.com,Class 1|Class 3,English
+teacher005,Mohammed Al-Fatih,teacher5@school.com,Class 2|Class 4,Arabic
+teacher006,Fatima Hassan,teacher6@school.com,Class 7|Class 8,Quran|Arabic
+teacher007,Aisha Rehman,teacher7@school.com,Class 7|Class 8,English|Malayalam
+teacher008,Robert Chen,teacher8@school.com,Class 6|Class 7,Mathematics
+teacher009,Elena Rostova,teacher9@school.com,Class 5|Class 8,Science
+teacher010,Ravi Kumar,teacher10@school.com,Class 1|Class 2|Class 3,Malayalam

@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduMark - School Marks & Evaluation Portal</title>
+  <meta name="description" content="A comprehensive marks management system for Continuous Evaluation (CE) and Teacher Entered (TE) marks. Supports role-based access, automated calculations, and reporting.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Export Libraries -->
+  <!-- html2pdf for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5IfS51RRmtCgoVCqV482zpurc9Mqku16fpz9SL5JXQRkb56JiIIQmkyMglOHM7OtMaSEGXLcg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- SheetJS for Excel generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBElk9T+8g9XgT37N5O2BqH2N220BwM0C3vT+u1Zg0L1bXp6h77r5U8JkQh6k2d0G1NqF0h6E2Xg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <!-- Firebase SDK (Compat Version for Vanilla JS ease) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Main App Wrapper -->
+  <div id="app" class="app-wrapper">
+    
+    <!-- ========================================== -->
+    <!-- 1. LOGIN VIEW -->
+    <!-- ========================================== -->
+    <div id="view-login" class="view-container login-page-bg">
+      <div class="login-overlay-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+      </div>
+      
+      <div class="login-card-wrapper">
+        <div class="login-brand">
+          <div class="brand-icon">
+            <i data-lucide="graduation-cap"></i>
+          </div>
+          <h1>EduMark</h1>
+          <p>Marks & Continuous Evaluation Portal</p>
+        </div>
+        
+        <div class="login-card glass-card">
+          <div class="login-tabs">
+            <button class="login-tab-btn active" data-target="tab-staff" id="btn-tab-staff">
+              <i data-lucide="users"></i> Staff Portal
+            </button>
+            <button class="login-tab-btn" data-target="tab-student" id="btn-tab-student">
+              <i data-lucide="user"></i> Student Search
+            </button>
+          </div>
+          
+          <div class="login-tab-content">
+            <!-- Staff Portal Tab -->
+            <div id="tab-staff" class="tab-pane active">
+              <form id="form-login">
+                <div class="form-group">
+                  <label for="login-email">Email Address</label>
+                  <div class="input-icon-wrapper">
+                    <i data-lucide="mail"></i>
+                    <input type="email" id="login-email" placeholder="admin@school.com or teacher@school.com" required>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="login-password">Password</label>
+                  <div class="input-icon-wrapper">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                  </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block btn-login" id="btn-submit-login">
+                  <span>Log In</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </form>
+              
+              <div class="login-help-text">
+                <p>Default Admin: <strong>admin@school.com</strong> (Pass: <strong>admin123</strong>)</p>
+                <p>Default Teacher: <strong>teacher1@school.com</strong> (Pass: <strong>teacher123</strong>)</p>
+              </div>
+            </div>
+            
+            <!-- Student Portal Tab -->
+            <div id="tab-student" class="tab-pane">
+              <div class="student-search-intro">
+                <p>Enter your Student ID (e.g., <strong>ST001</strong>) to view your marks and academic progress report.</p>
+              </div>
+              <form id="form-student-search">
+                <div class="form-group">
+                  <label for="student-search-id">Student ID</label>
+                  <div class="input-icon-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="student-search-id" placeholder="e.g., ST001" required>
+                  </div>
+                </div>
+                
+                <button type="submit" class="btn btn-secondary btn-block" id="btn-submit-student-search">
+                  <span>View Report Card</span>
+                  <i data-lucide="file-text"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <div class="login-footer">
+          <button id="btn-open-db-config-login" class="btn btn-link">
+            <i data-lucide="settings"></i> Firebase Setup
+          </button>
+          <span class="db-status-indicator mock" id="db-indicator-login">
+            <span class="status-dot"></span> <span class="status-text">Mock Mode</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MAIN DASHBOARD SYSTEM LAYOUT (Shared Sidebar) -->
+    <!-- ========================================== -->
+    <div id="main-dashboard-layout" class="dashboard-layout hidden">
+      
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-brand">
+            <div class="brand-icon">
+              <i data-lucide="graduation-cap"></i>
+            </div>
+            <h2>EduMark</h2>
+          </div>
+          <button id="btn-sidebar-close" class="btn-sidebar-toggle-mobile">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        
+        <div class="sidebar-user-card">
+          <div class="user-avatar" id="sidebar-user-avatar">A</div>
+          <div class="user-details">
+            <h4 id="sidebar-user-name">Administrator</h4>
+            <p id="sidebar-user-role">System Admin</p>
+          </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+          <!-- Admin Navigation Items -->
+          <div id="nav-group-admin" class="nav-group">
+            <div class="nav-label">Administration</div>
+            <a href="#admin-home" class="nav-link active" id="nav-admin-home">
+              <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+            </a>
+            <a href="#admin-teachers" class="nav-link" id="nav-admin-teachers">
+              <i data-lucide="users"></i> <span>Manage Teachers</span>
+            </a>
+            <a href="#admin-students" class="nav-link" id="nav-admin-students">
+              <i data-lucide="contact"></i> <span>Manage Students</span>
+            </a>
+          </div>
+
+          <!-- Teacher Navigation Items -->
+          <div id="nav-group-teacher" class="nav-group hidden">
+            <div class="nav-label">Academic Portal</div>
+            <a href="#teacher-home" class="nav-link" id="nav-teacher-home">
+              <i data-lucide="layout-dashboard"></i> <span>My Classes</span>
+            </a>
+            <a href="#teacher-marks" class="nav-link" id="nav-teacher-marks">
+              <i data-lucide="edit-3"></i> <span>Enter Marks</span>
+            </a>
+          </div>
+
+          <!-- Reports (Shared) -->
+          <div class="nav-group">
+            <div class="nav-label">Reports & Analytics</div>
+            <a href="#reports" class="nav-link" id="nav-reports">
+              <i data-lucide="bar-chart-3"></i> <span>Reports Portal</span>
+            </a>
+          </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+          <div class="sidebar-footer-row">
+            <button id="btn-theme-toggle" class="btn-theme" title="Toggle Dark/Light Mode">
+              <i data-lucide="sun" class="sun-icon"></i>
+              <i data-lucide="moon" class="moon-icon"></i>
+            </button>
+            <button id="btn-open-db-config" class="btn-theme" title="Firebase Config">
+              <i data-lucide="settings"></i>
+            </button>
+          </div>
+          <button id="btn-logout" class="btn btn-outline btn-logout btn-block">
+            <i data-lucide="log-out"></i> <span>Log Out</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT CONTAINER -->
+      <main class="main-content">
+        <!-- Main Header -->
+        <header class="main-header">
+          <div class="header-left">
+            <button id="btn-sidebar-open" class="btn-sidebar-toggle-mobile">
+              <i data-lucide="menu"></i>
+            </button>
+            <h1 id="header-view-title">Dashboard</h1>
+          </div>
+          
+          <div class="header-right">
+            <div class="db-badge mock" id="db-indicator-header">
+              <span class="status-dot"></span>
+              <span class="status-text">Mock Database</span>
+            </div>
+            <div class="header-user-info">
+              <span id="header-user-display">admin@school.com</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- VIEW WRAPPER -->
+        <div class="view-content-area">
+          
+          <!-- ========================================== -->
+          <!-- 2. ADMIN HOME VIEW -->
+          <!-- ========================================== -->
+          <div id="view-admin-home" class="dashboard-view">
+            <!-- Welcome Card -->
+            <div class="welcome-banner glass-card">
+              <div class="welcome-text">
+                <h2>Welcome back, <span id="admin-display-name">Admin</span>!</h2>
+                <p>Here is an overview of the school performance, class statistics, and quick administrative tools.</p>
+              </div>
+              <div class="welcome-illustration">
+                <i data-lucide="sparkles"></i>
+              </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+              <div class="stat-card glass-card">
+                <div class="stat-icon icon-primary">
+                  <i data-lucide="school"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total Classes</span>
+                  <h3 class="stat-value" id="stat-classes">8</h3>
+                </div>
+              </div>
+              
+              <div class="stat-card glass-card">
+                <div class="stat-icon icon-success">
+                  <i data-lucide="users"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total Students</span>
+                  <h3 class="stat-value" id="stat-students">74</h3>
+                </div>
+              </div>
+              
+              <div class="stat-card glass-card">
+                <div class="stat-icon icon-warning">
+                  <i data-lucide="shield-alert"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total Teachers</span>
+                  <h3 class="stat-value" id="stat-teachers">10</h3>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions & Recent Activity -->
+            <div class="dashboard-details-grid">
+              <!-- Quick Actions Card -->
+              <div class="panel-card glass-card">
+                <div class="panel-header">
+                  <h3><i data-lucide="zap"></i> Quick Actions</h3>
+                </div>
+                <div class="panel-body quick-actions-list">
+                  <button id="btn-quick-add-student" class="btn btn-secondary">
+                    <i data-lucide="user-plus"></i> Add New Student
+                  </button>
+                  <button id="btn-quick-add-teacher" class="btn btn-secondary">
+                    <i data-lucide="user-cog"></i> Add New Teacher
+                  </button>
+                  <button id="btn-quick-add-subject" class="btn btn-secondary">
+                    <i data-lucide="book-plus"></i> Add New Subject
+                  </button>
+                  <button id="btn-quick-view-reports" class="btn btn-secondary">
+                    <i data-lucide="bar-chart-3"></i> View School Reports
+                  </button>
+                  <button id="btn-seed-database" class="btn btn-accent">
+                    <i data-lucide="database"></i> Seed Sample Data
+                  </button>
+                </div>
+              </div>
+
+              <!-- Distribution of Students by Class Card -->
+              <div class="panel-card glass-card">
+                <div class="panel-header">
+                  <h3><i data-lucide="bar-chart"></i> Students per Class</h3>
+                </div>
+                <div class="panel-body">
+                  <div class="class-distribution-list" id="class-distribution-list">
+                    <!-- Dynamic rendering of class distributions -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- 3. ADMIN TEACHERS VIEW -->
+          <!-- ========================================== -->
+          <div id="view-admin-teachers" class="dashboard-view hidden">
+            <div class="view-actions-bar">
+              <div class="search-box-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-teachers" placeholder="Search teachers by name or email...">
+              </div>
+              <button id="btn-add-teacher" class="btn btn-primary">
+                <i data-lucide="plus"></i> Add Teacher
+              </button>
+            </div>
+
+            <div class="table-card glass-card">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Assigned Classes</th>
+                      <th>Assigned Subjects</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teachers-table-body">
+                    <!-- Dynamic rendering -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- 4. ADMIN STUDENTS VIEW -->
+          <!-- ========================================== -->
+          <div id="view-admin-students" class="dashboard-view hidden">
+            <div class="view-actions-bar flex-wrap">
+              <div class="search-box-wrapper flex-grow">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-students" placeholder="Search students by ID or name...">
+              </div>
+              <div class="filter-group">
+                <label for="filter-student-class">Class:</label>
+                <select id="filter-student-class" class="form-control-select">
+                  <option value="">All Classes</option>
+                  <option value="Class 1">Class 1</option>
+                  <option value="Class 2">Class 2</option>
+                  <option value="Class 3">Class 3</option>
+                  <option value="Class 4">Class 4</option>
+                  <option value="Class 5">Class 5</option>
+                  <option value="Class 6">Class 6</option>
+                  <option value="Class 7">Class 7</option>
+                  <option value="Class 8">Class 8</option>
+                </select>
+              </div>
+              <button id="btn-add-student" class="btn btn-primary">
+                <i data-lucide="plus"></i> Add Student
+              </button>
+            </div>
+
+            <div class="table-card glass-card">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Student ID</th>
+                      <th>Name</th>
+                      <th>Class</th>
+                      <th>Number of Subjects</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="students-table-body">
+                    <!-- Dynamic rendering -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- 5. TEACHER HOME VIEW -->
+          <!-- ========================================== -->
+          <div id="view-teacher-home" class="dashboard-view hidden">
+            <div class="welcome-banner glass-card">
+              <div class="welcome-text">
+                <h2>Welcome back, <span id="teacher-display-name">Teacher</span>!</h2>
+                <p>Select one of your assigned classes and subjects below to enter, edit, or view marks.</p>
+              </div>
+              <div class="welcome-illustration">
+                <i data-lucide="book-open"></i>
+              </div>
+            </div>
+
+            <div class="panel-card glass-card mt-6">
+              <div class="panel-header">
+                <h3><i data-lucide="bookmark"></i> My Assigned Classes & Subjects</h3>
+              </div>
+              <div class="panel-body">
+                <div class="assigned-grid" id="assigned-classes-subjects-grid">
+                  <!-- Dynamic cards based on teacher profile -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- 6. TEACHER MARKS ENTRY VIEW -->
+          <!-- ========================================== -->
+          <div id="view-teacher-marks" class="dashboard-view hidden">
+            <!-- Filter & Subject Selection Header -->
+            <div class="marks-config-bar glass-card">
+              <div class="config-fields-group">
+                <div class="config-field">
+                  <label for="marks-select-class">Select Class</label>
+                  <select id="marks-select-class" class="form-control-select">
+                    <option value="">-- Choose Class --</option>
+                  </select>
+                </div>
+                <div class="config-field">
+                  <label for="marks-select-subject">Select Subject</label>
+                  <select id="marks-select-subject" class="form-control-select" disabled>
+                    <option value="">-- Choose Subject --</option>
+                  </select>
+                </div>
+              </div>
+              <div class="config-info-badge hidden" id="marks-permission-badge">
+                <i data-lucide="shield-check"></i> Authorized to Edit
+              </div>
+            </div>
+
+            <!-- Spreadsheet-like Table for Mark Entry -->
+            <div class="spreadsheet-container-card glass-card mt-6 hidden" id="marks-entry-container">
+              <div class="spreadsheet-header">
+                <div class="spreadsheet-title-info">
+                  <h3 id="spreadsheet-title">Class 5 - Arabic</h3>
+                  <p>Continuous Evaluation (CE) out of 10 per month. Teacher Entered Exam (TE) out of 50.</p>
+                </div>
+                <div class="spreadsheet-actions">
+                  <button id="btn-save-marks" class="btn btn-primary">
+                    <i data-lucide="save"></i> Save All Marks
+                  </button>
+                </div>
+              </div>
+              
+              <div class="table-responsive spreadsheet-wrapper-scroll">
+                <table class="spreadsheet-table">
+                  <thead>
+                    <tr>
+                      <th class="sticky-col first-col">ID</th>
+                      <th class="sticky-col second-col">Student Name</th>
+                      <th>Jun</th>
+                      <th>Jul</th>
+                      <th>Aug</th>
+                      <th>Sep</th>
+                      <th>Oct</th>
+                      <th>Nov</th>
+                      <th>Dec</th>
+                      <th>Jan</th>
+                      <th>Feb</th>
+                      <th>Mar</th>
+                      <th class="summary-header">CE Total (100)</th>
+                      <th class="summary-header">CE Converted (10)</th>
+                      <th class="te-header">TE (50)</th>
+                      <th class="total-header">Total (60)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="marks-entry-table-body">
+                    <!-- Dynamic spreadsheet rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="empty-state-card glass-card mt-6" id="marks-entry-empty-state">
+              <div class="empty-state-icon">
+                <i data-lucide="table-properties"></i>
+              </div>
+              <h3>No Class Selected</h3>
+              <p>Please select an authorized Class and Subject from the selectors above to load the student evaluation sheet.</p>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- 7. REPORTS PORTAL VIEW -->
+          <!-- ========================================== -->
+          <div id="view-reports" class="dashboard-view hidden">
+            <!-- Reports Sub-tabs -->
+            <div class="reports-tabs-bar">
+              <button class="report-tab-btn active" data-target="report-student" id="btn-rep-tab-student">
+                <i data-lucide="user"></i> Student Transcript
+              </button>
+              <button class="report-tab-btn" data-target="report-class" id="btn-rep-tab-class">
+                <i data-lucide="school"></i> Class Report
+              </button>
+              <button class="report-tab-btn" data-target="report-subject" id="btn-rep-tab-subject">
+                <i data-lucide="book"></i> Subject Sheet
+              </button>
+              <button class="report-tab-btn" data-target="report-rank" id="btn-rep-tab-rank">
+                <i data-lucide="trophy"></i> Rank Leaderboard
+              </button>
+            </div>
+
+            <!-- REPORT TABS CONTENT -->
+            <div class="report-tab-content-area mt-6">
+              
+              <!-- 7.1 STUDENT REPORT TAB -->
+              <div id="report-student" class="report-pane active">
+                <div class="report-filter-bar glass-card">
+                  <div class="search-box-wrapper flex-grow">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="report-student-search" placeholder="Search student by Name or ID...">
+                    <div id="report-student-suggestions" class="search-suggestions hidden"></div>
+                  </div>
+                  <button id="btn-print-student-report" class="btn btn-secondary" disabled>
+                    <i data-lucide="printer"></i> Print PDF
+                  </button>
+                </div>
+
+                <!-- Printable Transcript -->
+                <div class="transcript-wrapper mt-6 hidden" id="student-transcript-card">
+                  <!-- Actual printable area -->
+                  <div id="printable-student-card" class="printable-report-container glass-card">
+                    <div class="report-print-header">
+                      <div class="school-header-info">
+                        <h2>EDUMARK ACADEMY</h2>
+                        <p>Affiliated Board of School Education</p>
+                        <h4>ACADEMIC PROGRESS REPORT</h4>
+                      </div>
+                      <div class="school-logo">
+                        <i data-lucide="graduation-cap"></i>
+                      </div>
+                    </div>
+                    
+                    <hr class="report-divider">
+                    
+                    <div class="student-meta-grid">
+                      <div class="meta-item">
+                        <span class="meta-lbl">Student Name:</span>
+                        <strong class="meta-val" id="rep-student-name">Ahmad</strong>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-lbl">Student ID:</span>
+                        <strong class="meta-val" id="rep-student-id">ST001</strong>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-lbl">Academic Year:</span>
+                        <strong class="meta-val">2026-2027</strong>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-lbl">Class / Grade:</span>
+                        <strong class="meta-val" id="rep-student-class">Class 5</strong>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive mt-6">
+                      <table class="report-table">
+                        <thead>
+                          <tr>
+                            <th>Subject</th>
+                            <th class="text-center">CE Converted (10)</th>
+                            <th class="text-center">TE Exam (50)</th>
+                            <th class="text-center">Total Score (60)</th>
+                            <th class="text-center">Percentage (%)</th>
+                            <th class="text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody id="rep-student-marks-body">
+                          <!-- Dynamic rows -->
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="report-summary-box mt-6">
+                      <div class="summary-stat">
+                        <span>Grand Total</span>
+                        <h4 id="rep-student-grand-total">0 / 0</h4>
+                      </div>
+                      <div class="summary-stat">
+                        <span>Overall Percentage</span>
+                        <h4 id="rep-student-overall-percentage">0%</h4>
+                      </div>
+                      <div class="summary-stat">
+                        <span>Result Status</span>
+                        <h4 id="rep-student-overall-status" class="pass-text">PASS</h4>
+                      </div>
+                    </div>
+
+                    <div class="report-footer-signatures">
+                      <div class="signature-line">
+                        <div class="sig-space"></div>
+                        <span>Class Teacher</span>
+                      </div>
+                      <div class="signature-line">
+                        <div class="sig-space"></div>
+                        <span>Principal</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="empty-state-card glass-card mt-6" id="student-report-empty-state">
+                  <div class="empty-state-icon">
+                    <i data-lucide="user-search"></i>
+                  </div>
+                  <h3>Select a Student</h3>
+                  <p>Type and select a student in the search bar above to generate their detailed academic progress report card.</p>
+                </div>
+              </div>
+
+              <!-- 7.2 CLASS REPORT TAB -->
+              <div id="report-class" class="report-pane">
+                <div class="report-filter-bar glass-card">
+                  <div class="config-field">
+                    <label for="report-class-select">Select Class</label>
+                    <select id="report-class-select" class="form-control-select">
+                      <option value="">-- Choose Class --</option>
+                      <option value="Class 1">Class 1</option>
+                      <option value="Class 2">Class 2</option>
+                      <option value="Class 3">Class 3</option>
+                      <option value="Class 4">Class 4</option>
+                      <option value="Class 5">Class 5</option>
+                      <option value="Class 6">Class 6</option>
+                      <option value="Class 7">Class 7</option>
+                      <option value="Class 8">Class 8</option>
+                    </select>
+                  </div>
+                  <div class="report-actions-group">
+                    <button id="btn-pdf-class-report" class="btn btn-secondary" disabled>
+                      <i data-lucide="file-text"></i> Export PDF
+                    </button>
+                    <button id="btn-excel-class-report" class="btn btn-secondary" disabled>
+                      <i data-lucide="sheet"></i> Export Excel
+                    </button>
+                  </div>
+                </div>
+
+                <div class="class-report-card glass-card mt-6 hidden" id="class-report-container">
+                  <div id="printable-class-report">
+                    <div class="report-print-header">
+                      <div>
+                        <h2 id="class-report-title">CLASS REPORT - CLASS 5</h2>
+                        <p>Academic Consolidation & Averages</p>
+                      </div>
+                      <div class="school-logo">
+                        <i data-lucide="school"></i>
+                      </div>
+                    </div>
+                    
+                    <div class="class-summary-badges mt-4">
+                      <div class="summary-badge">
+                        <span class="badge-lbl">Total Students</span>
+                        <strong class="badge-val" id="class-rep-student-count">14</strong>
+                      </div>
+                      <div class="summary-badge">
+                        <span class="badge-lbl">Class Average %</span>
+                        <strong class="badge-val" id="class-rep-class-avg">82.5%</strong>
+                      </div>
+                      <div class="summary-badge">
+                        <span class="badge-lbl">Pass Rate</span>
+                        <strong class="badge-val" id="class-rep-pass-rate">100%</strong>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive mt-6">
+                      <table class="report-table-small" id="class-report-table">
+                        <thead>
+                          <!-- Dynamic columns based on available subjects + summary -->
+                        </thead>
+                        <tbody id="class-report-table-body">
+                          <!-- Dynamic rows -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="empty-state-card glass-card mt-6" id="class-report-empty-state">
+                  <div class="empty-state-icon">
+                    <i data-lucide="folder-open"></i>
+                  </div>
+                  <h3>No Class Selected</h3>
+                  <p>Please select a class from the dropdown above to view the performance and grades spreadsheet of all students in that class.</p>
+                </div>
+              </div>
+
+              <!-- 7.3 SUBJECT REPORT TAB -->
+              <div id="report-subject" class="report-pane">
+                <div class="report-filter-bar glass-card">
+                  <div class="config-fields-group">
+                    <div class="config-field">
+                      <label for="report-sub-select-class">Class</label>
+                      <select id="report-sub-select-class" class="form-control-select">
+                        <option value="">-- Choose Class --</option>
+                        <option value="Class 1">Class 1</option>
+                        <option value="Class 2">Class 2</option>
+                        <option value="Class 3">Class 3</option>
+                        <option value="Class 4">Class 4</option>
+                        <option value="Class 5">Class 5</option>
+                        <option value="Class 6">Class 6</option>
+                        <option value="Class 7">Class 7</option>
+                        <option value="Class 8">Class 8</option>
+                      </select>
+                    </div>
+                    <div class="config-field">
+                      <label for="report-sub-select-subject">Subject</label>
+                      <select id="report-sub-select-subject" class="form-control-select" disabled>
+                        <option value="">-- Choose Subject --</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="report-actions-group">
+                    <button id="btn-pdf-subject-report" class="btn btn-secondary" disabled>
+                      <i data-lucide="file-text"></i> Export PDF
+                    </button>
+                    <button id="btn-excel-subject-report" class="btn btn-secondary" disabled>
+                      <i data-lucide="sheet"></i> Export Excel
+                    </button>
+                  </div>
+                </div>
+
+                <div class="subject-report-card glass-card mt-6 hidden" id="subject-report-container">
+                  <div id="printable-subject-report">
+                    <div class="report-print-header">
+                      <div>
+                        <h2 id="subject-report-title">SUBJECT REPORT: ARABIC</h2>
+                        <p id="subject-report-subtitle">Class 5 | Continuous Evaluation & Exam Analysis</p>
+                      </div>
+                      <div class="school-logo">
+                        <i data-lucide="book-marked"></i>
+                      </div>
+                    </div>
+                    
+                    <div class="subject-stats-summary mt-4">
+                      <div class="stat-summary-box">
+                        <span class="lbl">Class Average</span>
+                        <h3 id="sub-rep-avg">0.0</h3>
+                      </div>
+                      <div class="stat-summary-box">
+                        <span class="lbl">Highest Score</span>
+                        <h3 id="sub-rep-high">0.0</h3>
+                      </div>
+                      <div class="stat-summary-box">
+                        <span class="lbl">Lowest Score</span>
+                        <h3 id="sub-rep-low">0.0</h3>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive mt-6">
+                      <table class="report-table" id="subject-report-table">
+                        <thead>
+                          <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th class="text-center">CE Total (100)</th>
+                            <th class="text-center">CE Converted (10)</th>
+                            <th class="text-center">TE Exam (50)</th>
+                            <th class="text-center">Total (60)</th>
+                            <th class="text-center">Percentage (%)</th>
+                          </tr>
+                        </thead>
+                        <tbody id="subject-report-table-body">
+                          <!-- Dynamic rows -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="empty-state-card glass-card mt-6" id="subject-report-empty-state">
+                  <div class="empty-state-icon">
+                    <i data-lucide="book-open"></i>
+                  </div>
+                  <h3>No Subject Selected</h3>
+                  <p>Please select both a class and a subject from the filters above to generate the subject-specific performance report.</p>
+                </div>
+              </div>
+
+              <!-- 7.4 RANK LIST TAB -->
+              <div id="report-rank" class="report-pane">
+                <div class="report-filter-bar glass-card">
+                  <div class="config-field">
+                    <label for="report-rank-select-class">Select Class</label>
+                    <select id="report-rank-select-class" class="form-control-select">
+                      <option value="">-- Choose Class --</option>
+                      <option value="Class 1">Class 1</option>
+                      <option value="Class 2">Class 2</option>
+                      <option value="Class 3">Class 3</option>
+                      <option value="Class 4">Class 4</option>
+                      <option value="Class 5">Class 5</option>
+                      <option value="Class 6">Class 6</option>
+                      <option value="Class 7">Class 7</option>
+                      <option value="Class 8">Class 8</option>
+                    </select>
+                  </div>
+                  <div class="report-actions-group">
+                    <button id="btn-pdf-rank-report" class="btn btn-secondary" disabled>
+                      <i data-lucide="file-text"></i> Export PDF
+                    </button>
+                    <button id="btn-excel-rank-report" class="btn btn-secondary" disabled>
+                      <i data-lucide="sheet"></i> Export Excel
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Rank List Showcase -->
+                <div class="rank-list-wrapper mt-6 hidden" id="rank-report-container">
+                  <!-- Podium Top 3 (if applicable) -->
+                  <div class="podium-container" id="podium-container">
+                    <!-- Dynamic rendering of podium -->
+                  </div>
+
+                  <!-- Ranking Table -->
+                  <div class="table-card glass-card mt-6">
+                    <div id="printable-rank-report">
+                      <div class="report-print-header pad-20">
+                        <div>
+                          <h2 id="rank-report-title">ACADEMIC RANK LIST</h2>
+                          <p id="rank-report-subtitle">Class 5 | Sorting by Cumulative CE + TE Scores</p>
+                        </div>
+                        <div class="school-logo">
+                          <i data-lucide="trophy"></i>
+                        </div>
+                      </div>
+                      
+                      <div class="table-responsive">
+                        <table class="report-table">
+                          <thead>
+                            <tr>
+                              <th class="text-center" style="width: 80px;">Rank</th>
+                              <th>Student ID</th>
+                              <th>Student Name</th>
+                              <th class="text-center">Total CE Converted</th>
+                              <th class="text-center">Total TE Score</th>
+                              <th class="text-center">Cumulative Score</th>
+                              <th class="text-center">Overall %</th>
+                            </tr>
+                          </thead>
+                          <tbody id="rank-table-body">
+                            <!-- Dynamic rows -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="empty-state-card glass-card mt-6" id="rank-report-empty-state">
+                  <div class="empty-state-icon">
+                    <i data-lucide="award"></i>
+                  </div>
+                  <h3>Generate Rank List</h3>
+                  <p>Please select a class from the dropdown above to calculate, sort, and display the academic rankings of the students.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 8. PUBLIC STUDENT PORTAL VIEW (Direct access) -->
+    <!-- ========================================== -->
+    <div id="view-student-portal" class="view-container student-portal-bg hidden">
+      <div class="portal-header">
+        <div class="portal-brand">
+          <div class="brand-icon">
+            <i data-lucide="graduation-cap"></i>
+          </div>
+          <h2>EduMark Student Portal</h2>
+        </div>
+        <button id="btn-student-portal-exit" class="btn btn-outline">
+          <i data-lucide="log-out"></i> Exit Portal
+        </button>
+      </div>
+      
+      <div class="portal-content-container">
+        <!-- Student Card (reused layout) -->
+        <div class="student-portal-layout">
+          <div class="student-welcome-alert glass-card">
+            <h3>Hello, <span id="portal-student-welcome-name">Ahmad</span>!</h3>
+            <p>Here is your current academic performance report. You can review your Continuous Evaluation (CE) scores month-by-month, and your final Teacher Entered (TE) marks.</p>
+            <button id="btn-pdf-student-portal" class="btn btn-primary mt-4">
+              <i data-lucide="download"></i> Download Official Report Card (PDF)
+            </button>
+          </div>
+          
+          <!-- Printable Area inside Student Portal -->
+          <div id="portal-student-printable-card" class="printable-report-container glass-card mt-6">
+            <div class="report-print-header">
+              <div class="school-header-info">
+                <h2>EDUMARK ACADEMY</h2>
+                <p>Academic Evaluation Board</p>
+                <h4>OFFICIAL STUDENT PROGRESS CARD</h4>
+              </div>
+              <div class="school-logo">
+                <i data-lucide="award"></i>
+              </div>
+            </div>
+            
+            <hr class="report-divider">
+            
+            <div class="student-meta-grid">
+              <div class="meta-item">
+                <span class="meta-lbl">Student Name:</span>
+                <strong class="meta-val" id="portal-student-name">Ahmad</strong>
+              </div>
+              <div class="meta-item">
+                <span class="meta-lbl">Student ID:</span>
+                <strong class="meta-val" id="portal-student-id">ST001</strong>
+              </div>
+              <div class="meta-item">
+                <span class="meta-lbl">Class / Grade:</span>
+                <strong class="meta-val" id="portal-student-class">Class 5</strong>
+              </div>
+              <div class="meta-item">
+                <span class="meta-lbl">Evaluation Period:</span>
+                <strong class="meta-val">June - March</strong>
+              </div>
+            </div>
+
+            <div class="table-responsive mt-6">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Subject</th>
+                    <th class="text-center">CE Converted (10)</th>
+                    <th class="text-center">TE Exam (50)</th>
+                    <th class="text-center">Total Score (60)</th>
+                    <th class="text-center">Percentage (%)</th>
+                    <th class="text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="portal-student-marks-body">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="report-summary-box mt-6">
+              <div class="summary-stat">
+                <span>Grand Total</span>
+                <h4 id="portal-student-grand-total">0 / 0</h4>
+              </div>
+              <div class="summary-stat">
+                <span>Overall Percentage</span>
+                <h4 id="portal-student-overall-percentage">0%</h4>
+              </div>
+              <div class="summary-stat">
+                <span>Result Status</span>
+                <h4 id="portal-student-overall-status" class="pass-text">PASS</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- End App Wrapper -->
+
+  <!-- ========================================== -->
+  <!-- MODAL DIALOGS -->
+  <!-- ========================================== -->
+
+  <!-- 1. DATABASE CONFIG / SETUP MODAL -->
+  <div id="modal-db-config" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3><i data-lucide="settings"></i> Firebase Connection Setup</h3>
+        <button class="btn-close-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Configure your school's Firebase database connection. If left empty, the application runs in **Mock Mode** using browser-based storage (fully functional for evaluation).
+        </p>
+        <form id="form-db-config">
+          <div class="form-group">
+            <label for="fb-apiKey">API Key</label>
+            <input type="text" id="fb-apiKey" class="form-control" placeholder="AIzaSy...">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="fb-authDomain">Auth Domain</label>
+              <input type="text" id="fb-authDomain" class="form-control" placeholder="school-marks-123.firebaseapp.com">
+            </div>
+            <div class="form-group">
+              <label for="fb-projectId">Project ID</label>
+              <input type="text" id="fb-projectId" class="form-control" placeholder="school-marks-123">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="fb-storageBucket">Storage Bucket</label>
+              <input type="text" id="fb-storageBucket" class="form-control" placeholder="school-marks-123.appspot.com">
+            </div>
+            <div class="form-group">
+              <label for="fb-messagingSenderId">Messaging Sender ID</label>
+              <input type="text" id="fb-messagingSenderId" class="form-control" placeholder="1234567890">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="fb-appId">App ID</label>
+            <input type="text" id="fb-appId" class="form-control" placeholder="1:1234567890:web:abcdef...">
+          </div>
+          
+          <div class="modal-actions mt-6">
+            <button type="button" class="btn btn-outline btn-close-modal">Cancel</button>
+            <button type="button" id="btn-clear-db-config" class="btn btn-danger-outline">Clear Config (Mock Mode)</button>
+            <button type="submit" class="btn btn-primary">Save & Connect</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ADD / EDIT TEACHER MODAL -->
+  <div id="modal-teacher" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 id="modal-teacher-title">Add New Teacher</h3>
+        <button class="btn-close-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-teacher">
+          <input type="hidden" id="teacher-form-id">
+          
+          <div class="form-group">
+            <label for="teacher-name">Teacher Name</label>
+            <input type="text" id="teacher-name" class="form-control" placeholder="e.g., Sarah Smith" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="teacher-email">Email Address</label>
+            <input type="email" id="teacher-email" class="form-control" placeholder="teacher@school.com" required>
+          </div>
+
+          <div class="form-group hidden" id="teacher-password-group">
+            <label for="teacher-password">Password (For New Teacher)</label>
+            <input type="password" id="teacher-password" class="form-control" placeholder="Minimum 6 characters">
+          </div>
+
+          <div class="form-grid-2">
+            <!-- Classes Selection -->
+            <div class="form-group">
+              <label>Assigned Classes (Select multiple)</label>
+              <div class="checkbox-list-box" id="teacher-classes-checklist">
+                <div class="checkbox-item"><input type="checkbox" id="t-class-1" value="Class 1"> <label for="t-class-1">Class 1</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-2" value="Class 2"> <label for="t-class-2">Class 2</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-3" value="Class 3"> <label for="t-class-3">Class 3</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-4" value="Class 4"> <label for="t-class-4">Class 4</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-5" value="Class 5"> <label for="t-class-5">Class 5</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-6" value="Class 6"> <label for="t-class-6">Class 6</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-7" value="Class 7"> <label for="t-class-7">Class 7</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-class-8" value="Class 8"> <label for="t-class-8">Class 8</label></div>
+              </div>
+            </div>
+
+            <!-- Subjects Selection -->
+            <div class="form-group">
+              <label>Assigned Subjects (Select multiple)</label>
+              <div class="checkbox-list-box" id="teacher-subjects-checklist">
+                <div class="checkbox-item"><input type="checkbox" id="t-sub-arabic" value="Arabic"> <label for="t-sub-arabic">Arabic</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-sub-english" value="English"> <label for="t-sub-english">English</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-sub-quran" value="Quran"> <label for="t-sub-quran">Quran</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-sub-malayalam" value="Malayalam"> <label for="t-sub-malayalam">Malayalam</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-sub-maths" value="Mathematics"> <label for="t-sub-maths">Mathematics</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="t-sub-science" value="Science"> <label for="t-sub-science">Science</label></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-actions mt-6">
+            <button type="button" class="btn btn-outline btn-close-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Teacher</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ADD / EDIT STUDENT MODAL -->
+  <div id="modal-student" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 id="modal-student-title">Add New Student</h3>
+        <button class="btn-close-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-student">
+          <input type="hidden" id="student-form-id">
+          
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="student-id-field">Student ID</label>
+              <input type="text" id="student-id-field" class="form-control" placeholder="e.g., ST075" required>
+            </div>
+            <div class="form-group">
+              <label for="student-name-field">Full Name</label>
+              <input type="text" id="student-name-field" class="form-control" placeholder="e.g., Ahmad" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="student-class-field">Class Assignment</label>
+            <select id="student-class-field" class="form-control" required>
+              <option value="Class 1">Class 1</option>
+              <option value="Class 2">Class 2</option>
+              <option value="Class 3">Class 3</option>
+              <option value="Class 4">Class 4</option>
+              <option value="Class 5">Class 5</option>
+              <option value="Class 6">Class 6</option>
+              <option value="Class 7">Class 7</option>
+              <option value="Class 8">Class 8</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Subject Enrollment (Students will automatically inherit standard subjects for evaluation)</label>
+            <p class="modal-desc" style="margin-top: 5px;">
+              Enrolling a student in a class automatically sets up their subject profile (Arabic, English, Quran, Malayalam, Mathematics, Science) ready for grading.
+            </p>
+          </div>
+          
+          <div class="modal-actions mt-6">
+            <button type="button" class="btn btn-outline btn-close-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Student</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ADD SUBJECT MODAL -->
+  <div id="modal-subject" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3><i data-lucide="book-open"></i> Add New Subject</h3>
+        <button class="btn-close-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-subject">
+          <div class="form-group">
+            <label for="subject-name-field">Subject Name</label>
+            <input type="text" id="subject-name-field" class="form-control" placeholder="e.g., Social Science" required>
+          </div>
+          <div class="modal-actions mt-6">
+            <button type="button" class="btn btn-outline btn-close-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Subject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Controller App Script -->
+  <script src="app.js"></script>
+</body>
+</html>
